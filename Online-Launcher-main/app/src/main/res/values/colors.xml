@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- GTA SA Dark Theme -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Primary dark background -->
+    <color name="colorPrimary">#0D0D0D</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#FF6B00</color>
+
+    <!-- GTA SA Orange accent -->
+    <color name="orange">#FF6B00</color>
+    <color name="orange_light">#FF8C33</color>
+    <color name="orange_dark">#CC5500</color>
+
+    <!-- Background layers -->
+    <color name="bg_dark">#0D0D0D</color>
+    <color name="bg_card">#1A1A1A</color>
+    <color name="bg_card2">#222222</color>
+    <color name="bg_nav">#111111</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#AAAAAA</color>
+    <color name="text_hint">#666666</color>
+
+    <!-- Status -->
+    <color name="green_online">#4CAF50</color>
+    <color name="red_offline">#F44336</color>
+    <color name="yellow_warning">#FFC107</color>
+
+    <!-- Legacy compat -->
+    <color name="purple_200">#FF6B00</color>
+    <color name="purple_500">#CC5500</color>
+    <color name="purple_700">#993D00</color>
+    <color name="teal_200">#FF8C33</color>
+    <color name="teal_700">#FF6B00</color>
+    <color name="nav_bg">#111111</color>
+    <color name="dark_grey">#1A1A1A</color>
+    <color name="security_icon">#FF6B00</color>
+    <color name="accent_blue">#1A6FFF</color>
+    <!-- Missing nav icon colors -->
+    <color name="home">#FF6B00</color>
+    <color name="play">#FF6B00</color>
+    <color name="settings">#FF6B00</color>
+    <color name="support">#FF6B00</color>
+    <color name="security">#FF6B00</color>
+    <!-- Missing layout colors -->
+    <color name="grey">#888888</color>
+    <color name="backgroundColor">#0D0D0D</color>
+    <color name="faq">#FF6B00</color>
+    <color name="dialog_color_1">#1A1A1A</color>
+</resources>
+<!-- Missing colors from drawables/layouts -->
