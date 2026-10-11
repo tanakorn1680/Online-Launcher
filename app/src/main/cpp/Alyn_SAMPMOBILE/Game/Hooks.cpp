@@ -653,6 +653,19 @@ DECL_HOOK(void, CWidget_SetEnabled, uintptr_t pWidget, bool bEnabled)
 	CWidget_SetEnabled(pWidget, bEnabled);
 }
 
+// TEMP DEBUG: diagnosing the "Pure virtual function called" crash in libOpenAL
+// that happens sometimes when entering a vehicle. This hook does not change
+// any behaviour - it only logs immediately before/after the original
+// CAEVehicleAudioEntity::TurnOnRadioForVehicle runs, so we can see from the
+// logs whether the crash happens inside this call or somewhere else.
+// Safe to remove once the crash is diagnosed.
+DECL_HOOK(void, CAEVehicleAudioEntity_TurnOnRadioForVehicle, uintptr_t pThis)
+{
+	spdlog::info("[AudioDebug] TurnOnRadioForVehicle: ENTER this=0x{:X}", pThis);
+	CAEVehicleAudioEntity_TurnOnRadioForVehicle(pThis);
+	spdlog::info("[AudioDebug] TurnOnRadioForVehicle: EXIT (returned normally)");
+}
+
 DECL_HOOK(int, CWorld_FindPlayerSlotWithPedPointer, sa::CPed *pPlayersPed)
 {
 	for (int i = 0; i < MAX_PLAYERS; ++i)
@@ -1059,6 +1072,9 @@ void Hooks::install()
 
 	// radar color
 	HOOK("_ZN11CHudColours12GetIntColourEh", CHudColours_GetIntColour);
+
+	// TEMP DEBUG: see the note above CAEVehicleAudioEntity_TurnOnRadioForVehicle_hook
+	HOOK("_ZN21CAEVehicleAudioEntity21TurnOnRadioForVehicleEv", CAEVehicleAudioEntity_TurnOnRadioForVehicle);
 
 	// vehicle collisions
 	HOOK("_ZN11CAutomobile22ProcessEntityCollisionEP7CEntityP9CColPoint", CAutoMobile_ProcessEntityCollision);
