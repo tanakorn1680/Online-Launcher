@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/backgroundColor">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/tela_down"
+        android:contentDescription="@null" />
+
+    <!-- Guardado escondido, so pra o SplashActivity.java continuar funcionando -->
+    <android.opengl.GLSurfaceView
+        android:id="@+id/surface"
+        android:layout_width="1px"
+        android:layout_height="1px" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/ahahaha"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="@dimen/_10sdp"
+        android:fontFamily="@font/gotham"
+        android:text="@string/ahahaha"
+        android:textColor="#B3FFFFFF"
+        android:textSize="@dimen/_8ssp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/statusPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/_14sdp"
+        android:background="@drawable/status_pill_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_10sdp"
+        android:paddingTop="@dimen/_6sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:paddingBottom="@dimen/_6sdp">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="@dimen/_14sdp"
+            android:layout_height="@dimen/_14sdp"
+            android:indeterminate="true"
+            android:indeterminateTint="#FFFFFF" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/info_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:fontFamily="@font/gotham"
+            android:text="@string/checking_for_updates_please_wait"
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/_9ssp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Botao de atualizacao obrigatoria: mesmo estilo/local do botao "Conectar" da tela
+         principal (canto inferior direito). So aparece quando o servidor acusa que os
+         arquivos do jogo estao desatualizados. Nao existe opcao de recusar - enquanto o
+         usuario nao tocar aqui e atualizar, ele nao segue para o painel principal. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnForceUpdate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/_18sdp"
+        android:background="@drawable/pill_button_accent"
+        app:backgroundTint="@null"
+        android:fontFamily="@font/montserrat_bold"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="@dimen/_150sdp"
+        android:paddingStart="@dimen/_20sdp"
+        android:paddingTop="@dimen/_10sdp"
+        android:paddingEnd="@dimen/_20sdp"
+        android:paddingBottom="@dimen/_10sdp"
+        android:text="@string/force_update"
+        android:textColor="#FFFFFF"
+        android:textSize="@dimen/_11ssp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:elevation="0dp" />
+
+</FrameLayout>
