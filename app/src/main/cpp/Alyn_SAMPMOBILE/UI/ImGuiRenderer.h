@@ -1,0 +1,59 @@
+#pragma once
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+
+#include <imgui.h>
+#include <imgui_internal.h>
+
+#include <string>
+
+class ImGuiRenderer {
+public:
+	ImGuiRenderer(ImDrawList* draw_list, ImFont* font);
+	virtual ~ImGuiRenderer() { };
+
+	void drawLine(const ImVec2& a, const ImVec2& b, const ImColor& color, float thickness = 1.0f);
+	void drawRect(const ImVec2& a, const ImVec2& b, const ImColor& color, bool fill = false, float thickness = 1.0f);
+	void drawRectFilledMulticolor(const ImVec2& a, const ImVec2& b, const ImColor& col_upr_left, const ImColor& col_upr_right, const ImColor& col_bot_right, const ImColor& col_bot_left);
+	void drawTriangle(const ImVec2& a, const ImVec2& b, const ImVec2& c, const ImColor& color, bool fill = false, float thickness = 1.0f);
+	void drawConvexPolyFilled(ImVec2* points, int num_points, const ImColor& color);
+	void drawText(const ImVec2& pos, const ImColor& color, const std::string& text, bool outlined = false, float font_size = 0.0f, ImFont* font = nullptr);
+	void drawImage(const ImVec2& a, const ImVec2& b, ImTextureID texture);
+	// Overload com UV custom - necessario quando a textura RwRaster tem
+	// dimensoes maiores que o conteudo real (RW arredonda pra potencia de
+	// 2 ao carregar PNG/JPG NPOT, ver AssetImageLoader/RwImageFindRasterFormat).
+	// uv (0,0)-(1,1) cobre a textura inteira; passe uvMax menor que (1,1)
+	// pra mostrar so a fatia com conteudo real.
+	void drawImage(const ImVec2& a, const ImVec2& b, ImTextureID texture, const ImVec2& uvMin, const ImVec2& uvMax);
+
+	// HUD estilo hexagono (vida/colete/fome/sede): fundo solido + borda que
+	// preenche o perimetro do hexagono proporcional a um valor de 0.0 a 1.0.
+	void drawHexagonFilled(const ImVec2& center, float radius, const ImColor& color);
+	void drawHexagonProgress(const ImVec2& center, float radius, float thickness, const ImColor& color, float percent);
+
+	// Arco de circulo generico (usado pelo velocimetro). Angulos em GRAUS,
+	// na convencao do ImGui: 0 = direita (3h), 90 = baixo (6h), 180 =
+	// esquerda (9h), 270 = cima (12h), sentido horario. angleMaxDeg pode
+	// passar de 360 pra "dar a volta" (ex: 135 a 405 = 270 graus de sweep
+	// comecando no canto inferior-esquerdo).
+	void drawArc(const ImVec2& center, float radius, float thickness, const ImColor& color, float angleMinDeg, float angleMaxDeg);
+
+	// Card branco arredondado das notificacoes + miolo colorido do icone
+	// hexagonal. rounding em pixels (raio do canto).
+	void drawRoundedRectFilled(const ImVec2& min, const ImVec2& max, float rounding, const ImColor& color);
+	void drawCircleFilled(const ImVec2& center, float radius, const ImColor& color);
+
+	void pushClipRect(const ImVec2& min, const ImVec2& max, bool intersect = false);
+	void popClipRect();
+
+	ImVec2 calculateTextSize(const std::string& text, float font_size = 0.0f);
+
+private:
+	ImVec2 calculateTextSize(const char* begin, const char* end, float font_size = 0.0f);
+	void drawText(const ImVec2& pos, const ImColor& color, const char* begin, const char* end = nullptr, bool outlined = false, float font_size = 0.0f, ImFont* font = nullptr);
+	bool processInlineHexColor(const char* start, const char* end, ImVec4& color);
+
+private:
+	ImDrawList* m_drawList;
+	ImFont* m_font;
+};
