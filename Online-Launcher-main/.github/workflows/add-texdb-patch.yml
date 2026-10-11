@@ -1,0 +1,78 @@
+name: Add missing texture files to the release (run once)
+
+# Run ONCE by hand (Actions tab -> this workflow -> Run workflow).
+# Your gamedata.zip has no ETC texture databases (needed by this client and by
+# Mali GPUs). This copies the missing texdb/** files from the original data zip
+# into a small texdb_patch.zip, uploads it to your Release v1.0 and adds it to
+# the download lists. Next time you open the app it offers UPDATE (~240 MB).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build texdb_patch.zip from the original data zip
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          curl -fL --retry 3 -o /tmp/orig.zip "https://github.com/east9-777/ATT-APK-NATIVO/releases/download/gamedata-v1/gamedata.zip"
+          curl -fL --retry 3 -o /tmp/mine.zip "https://github.com/$REPO/releases/download/v1.0/gamedata.zip"
+          python3 - << 'PY'
+          import zipfile, os
+          orig = zipfile.ZipFile('/tmp/orig.zip')
+          mine = zipfile.ZipFile('/tmp/mine.zip')
+          have = {n.lower() for n in mine.namelist()}
+          want = [i for i in orig.infolist()
+                  if not i.filename.endswith('/')
+                  and i.filename.lower().startswith('texdb/')
+                  and i.filename.lower() not in have]
+          if not want:
+              print("Nothing is missing - your zip already has every texdb file.")
+              open('/tmp/nothing_missing', 'w').write('1')
+          else:
+              with zipfile.ZipFile('/tmp/texdb_patch.zip', 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
+                  for i in want:
+                      out.writestr(i.filename, orig.read(i.filename))
+              print(len(want), "files ->", os.path.getsize('/tmp/texdb_patch.zip'), "bytes")
+          PY
+
+      - name: Upload to the release and add to the download lists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          if [ -f /tmp/nothing_missing ]; then echo "Nothing to do."; exit 0; fi
+          SIZE=$(stat -c %s /tmp/texdb_patch.zip)
+          gh release upload v1.0 /tmp/texdb_patch.zip --clobber --repo "$REPO"
+          python3 - "$SIZE" "$REPO" << 'PY'
+          import json, sys
+          size, repo = int(sys.argv[1]), sys.argv[2]
+          entry = {"name": "texdb_patch", "path": "", "size": size,
+                   "url": f"https://github.com/{repo}/releases/download/v1.0/texdb_patch.zip"}
+          for f in ("lite_list", "full_list"):
+              p = f"remote/data_lists/{f}.json"
+              d = json.load(open(p, encoding='utf-8-sig'))
+              arch = [a for a in d.get("archives", []) if a.get("name") != "texdb_patch"]
+              arch.append(entry)
+              d["archives"] = arch
+              d.setdefault("files", [])
+              with open(p, "w", encoding="utf-8") as fh:
+                  json.dump(d, fh, indent=2)
+                  fh.write("\n")
+              print("updated", p)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add remote/data_lists
+          if git diff --cached --quiet; then echo "Lists already up to date."
+          else git commit -m "Add texdb_patch archive to the download lists" && git push; fi

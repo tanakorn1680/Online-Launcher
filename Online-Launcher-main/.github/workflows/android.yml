@@ -1,0 +1,183 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Install Android SDK components
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "cmake;3.22.1" \
+            "ndk;25.1.8937393"
+
+      - name: Make Gradle executable
+        run: |
+          sed -i 's/\r$//' ./gradlew
+          chmod +x ./gradlew
+
+      - name: Fallback - restore files missing from this repo (skipped once the repo is complete)
+        if: hashFiles('app/src/main/jniLibs/arm64-v8a/libGTASA.so') == ''
+        run: |
+          UP_SHA=824260b19bd3fb473b44ee5104d237e300733944
+          curl -fL --retry 3 -o /tmp/upstream.zip \
+            "https://codeload.github.com/east9-777/Nativo_ApkSamp/zip/$UP_SHA"
+          mkdir -p /tmp/upstream
+          unzip -q /tmp/upstream.zip -d /tmp/upstream
+          UP="$(ls -d /tmp/upstream/*/)"
+          UP="${UP%/}"
+          rm -rf "$UP/.git" "$UP/.github" "$UP/README.md" "$UP/app/src/main/java/com/nativo"
+          # copy only files this repo does not have (never overwrites your own edits)
+          (cd "$UP" && find . -type f) | while IFS= read -r f; do
+            if [ ! -e "$f" ]; then
+              mkdir -p "$(dirname "$f")"
+              cp "$UP/$f" "$f"
+            fi
+          done
+          # drop placeholder XMLs that now have a real image/font with the same name
+          for x in app/src/main/res/drawable/*.xml app/src/main/res/font/*.xml; do
+            s="${x%.xml}"
+            for e in png jpg jpeg webp ttf otf; do
+              if [ -f "$s.$e" ]; then rm -f "$x"; echo "Removed placeholder: $x"; break; fi
+            done
+          done
+          ls -la app/src/main/jniLibs/arm64-v8a/libGTASA.so app/src/main/jniLibs/armeabi-v7a/libGTASA.so
+
+      - name: Fix CMakeLists - add cmake_minimum_required to all sub files
+        run: |
+          find app/src/main/cpp -name "CMakeLists.txt" | while read f; do
+            if ! grep -q "cmake_minimum_required" "$f"; then
+              sed -i '1s|^|cmake_minimum_required(VERSION 3.22.1)\n|' "$f"
+              echo "Fixed: $f"
+            fi
+          done
+
+      - name: Remove duplicate old Java package (com/nativo/rpg)
+        run: |
+          rm -rf app/src/main/java/com/nativo
+          echo "Removed com/nativo/rpg"
+
+      - name: Ensure native setup (auto-fixes known problems, fails fast otherwise)
+        run: |
+          S="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          M=app/src/main/cpp/Alyn_SAMPMOBILE/Memory
+          GLOSS_TAG=v1.9.2
+          SHA_H=96687ccec8314d735f7223a049285e5c2854f17b923673d1aee97535b298eab8
+          SHA_64=1850e00f45189e57ac6695c3ffdd349846a9614fc340c1efec3a9b0ba8dd6804
+          SHA_32=307ef4335db5f541c78032c44f6bb6ed6bf099a60e9bf25eb78b400a11cc5ef3
+          fail=0
+          echo "### Native setup check" >> "$S"
+
+          sha() { sha256sum "$1" 2>/dev/null | cut -d' ' -f1; }
+
+          # 1) client code adapted to the GlossHook 1.9.x header (safe to repeat)
+          sed -i 's/\$ARM64/I_ARM64/g; s/\$THUMB/I_THUMB/g' "$M/include/Memory.h"
+          sed -i 's/GlossSymbol(handle, name)/GlossSymbol(handle, name, nullptr)/' "$M/include/SymUtils.h"
+
+          # 2) GlossHook header + libraries must be exactly v1.9.2
+          need=0
+          [ "$(sha $M/include/Gloss.h)" = "$SHA_H" ] || need=1
+          [ "$(sha $M/lib/arm64-v8a/libGlossHook.a)" = "$SHA_64" ] || need=1
+          [ "$(sha $M/lib/armeabi-v7a/libGlossHook.a)" = "$SHA_32" ] || need=1
+          if [ "$need" = 1 ]; then
+            echo "GlossHook files in the repo are not v1.9.2 - fetching the official $GLOSS_TAG release"
+            if ! curl -fL --retry 3 -o /tmp/gloss.zip "https://codeload.github.com/XMDS/GlossHook/zip/refs/tags/$GLOSS_TAG"; then
+              echo "- :x: could not download GlossHook $GLOSS_TAG" >> "$S"
+              echo "::error::Could not download the official GlossHook $GLOSS_TAG release (network problem). Re-run the workflow."
+              exit 1
+            fi
+            mkdir -p /tmp/gloss && unzip -q -o /tmp/gloss.zip -d /tmp/gloss
+            G="$(ls -d /tmp/gloss/*/GlossHook | head -1)"
+            mkdir -p "$M/lib/arm64-v8a" "$M/lib/armeabi-v7a" "$M/include"
+            cp "$G/include/Gloss.h"             "$M/include/Gloss.h"
+            cp "$G/lib/ARM64/libGlossHook.a"    "$M/lib/arm64-v8a/libGlossHook.a"
+            cp "$G/lib/ARM/libGlossHook.a"      "$M/lib/armeabi-v7a/libGlossHook.a"
+            echo "- :wrench: GlossHook header/libs in the repo were not v1.9.2 - replaced with the official $GLOSS_TAG release for this build" >> "$S"
+          fi
+          for pair in "include/Gloss.h:$SHA_H" "lib/arm64-v8a/libGlossHook.a:$SHA_64" "lib/armeabi-v7a/libGlossHook.a:$SHA_32"; do
+            f="$M/${pair%%:*}"
+            if [ "$(sha "$f")" = "${pair##*:}" ]; then echo "- :white_check_mark: ${pair%%:*} = GlossHook $GLOSS_TAG" >> "$S"
+            else echo "- :x: ${pair%%:*} is still not GlossHook $GLOSS_TAG" >> "$S"; echo "::error::$f is not GlossHook $GLOSS_TAG after the fix attempt"; fail=1; fi
+          done
+
+          # 3) other known pitfalls
+          if head -5 app/src/main/cpp/CMakeLists.txt | grep -q "project(Memory)"; then
+            echo "- :x: app/src/main/cpp/CMakeLists.txt contains the Memory file (wrong top-level file)" >> "$S"
+            echo "::error::app/src/main/cpp/CMakeLists.txt is the wrong file (project(Memory)). It must contain project(Alyn_SAMPMOBILE) and add_subdirectory(Alyn_SAMPMOBILE)."
+            fail=1
+          elif ! grep -q "add_subdirectory(Alyn_SAMPMOBILE)" app/src/main/cpp/CMakeLists.txt; then
+            echo "- :x: top-level CMakeLists.txt does not add Alyn_SAMPMOBILE" >> "$S"
+            echo "::error::top-level CMakeLists.txt does not contain add_subdirectory(Alyn_SAMPMOBILE)"
+            fail=1
+          else
+            echo "- :white_check_mark: top-level CMakeLists.txt is correct" >> "$S"
+          fi
+          if grep -q "c++_shared\|ANDROID_STL" app/build.gradle; then
+            echo "- :warning: build.gradle sets the C++ STL (c++_shared / ANDROID_STL). The original has none; remove it." >> "$S"
+            echo "::warning::build.gradle sets ANDROID_STL / c++_shared. The original project uses the default."
+          else
+            echo "- :white_check_mark: default C++ STL" >> "$S"
+          fi
+          if grep -q 'ndkVersion "25.1.8937393"' app/build.gradle; then
+            echo "- :white_check_mark: NDK 25.1.8937393" >> "$S"
+          else
+            echo "- :warning: ndkVersion in build.gradle is not 25.1.8937393" >> "$S"
+            echo "::warning::ndkVersion in app/build.gradle is not 25.1.8937393"
+          fi
+          [ "$fail" = 0 ] || exit 1
+
+      - name: Build release APK
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
+
+      - name: Summarize build errors (shown at the top of the run page)
+        if: failure()
+        run: |
+          S="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          [ -f build.log ] || { echo "### Build failed before Gradle produced a log (see the red step)" >> "$S"; exit 0; }
+          {
+            echo "### Build failed - the real error"
+            first=$(grep -n -m1 -E "(^|[^a-zA-Z])ld(\.lld)?: error|: error:|^FAILED:" build.log | cut -d: -f1)
+            if [ -n "$first" ]; then
+              echo '```'
+              sed -n "${first},$((first+25))p" build.log | cut -c1-260
+              echo '```'
+            else
+              echo "No compiler/linker error line found. Gradle summary:"
+              echo '```'
+              grep -n -A6 "What went wrong" build.log | cut -c1-260 | head -30
+              echo '```'
+            fi
+          } >> "$S"
+
+      - name: Verify APK signature
+        run: $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/GtaSanOnlineLauncher.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GtaSanOnlineLauncher-release
+          path: app/build/outputs/apk/release/GtaSanOnlineLauncher.apk
+          if-no-files-found: error
