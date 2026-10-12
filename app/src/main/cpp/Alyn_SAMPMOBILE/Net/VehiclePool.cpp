@@ -151,6 +151,20 @@ bool CVehiclePool::New(NEW_VEHICLE* new_veh)
 
 	if (!pNewVehicle) return false;
 
+	// Some vehicle types (e.g. train carriages - TRAIN_PASSENGER/TRAIN_FREIGHT)
+	// can come back from CVehicle's constructor with m_entity == nullptr, for
+	// example when the carriage arrives before its locomotive has finished
+	// linking up internally. If we let a vehicle with no entity continue on
+	// (SetModelIndex below, audio setup, etc.) it eventually crashes the game
+	// with "Pure virtual function called" deep inside the engine. Bail out
+	// early instead: this one vehicle/carriage silently fails to spawn, but
+	// the game keeps running.
+	if (!pNewVehicle->m_entity) {
+		spdlog::error("CVehiclePool::New: vehicle {} (type {}) has no entity, discarding instead of registering it", new_veh->VehicleID, new_veh->iVehicleType);
+		delete pNewVehicle;
+		return false;
+	}
+
 	m_pVehicles[new_veh->VehicleID] = pNewVehicle;
 
 	if (new_veh->byteInteriorColor1 != 0xFF || new_veh->byteInreriorColor2 != 0xFF) {
