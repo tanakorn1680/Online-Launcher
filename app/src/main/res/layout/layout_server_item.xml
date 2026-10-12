@@ -3,19 +3,22 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/server_item"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/_8sdp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/server_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@drawable/card_background"
+        android:padding="@dimen/_10sdp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/server_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginTop="@dimen/_5sdp"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -25,8 +28,8 @@
             android:id="@+id/server_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_30sdp"
-            android:layout_marginTop="@dimen/_5sdp"
+            android:layout_marginStart="@dimen/_22sdp"
+            android:layout_marginTop="0dp"
             android:fontFamily="@font/gotham"
             android:maxLines="1"
             android:text="Loading..."
@@ -40,7 +43,7 @@
             android:id="@+id/server_address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_30sdp"
+            android:layout_marginStart="@dimen/_22sdp"
             android:fontFamily="@font/gotham"
             android:maxLines="1"
             android:text="Address: 127.0.0.1:7777"
@@ -55,7 +58,7 @@
             android:id="@+id/server_gamemode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_30sdp"
+            android:layout_marginStart="@dimen/_22sdp"
             android:fontFamily="@font/gotham"
             android:maxLines="1"
             android:text="Gamemode: Mobile/PC"
@@ -70,7 +73,7 @@
             android:id="@+id/server_players"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_30sdp"
+            android:layout_marginStart="@dimen/_22sdp"
             android:fontFamily="@font/gotham"
             android:maxLines="1"
             android:text="Players: 0 / 0"
