@@ -1187,6 +1187,8 @@ bool CLocalPlayer::IsNeedSyncDataSend(const void* data1, const void* data2, size
 
 void CLocalPlayer::SendEnterVehicleNotification(VEHICLEID VehicleID, bool bPassenger)
 {
+	spdlog::info("SendEnterVehicleNotification: vehicle {} passenger {}", VehicleID, bPassenger);
+
 	CVehiclePool* pVehiclePool = pNetGame->GetVehiclePool();
 	if (pVehiclePool) {
 		CVehicle* pVehicle = pVehiclePool->GetAt(VehicleID);
@@ -1236,12 +1238,14 @@ void CLocalPlayer::SetPlayerColor(uint32_t dwColor)
 
 void CLocalPlayer::SendExitVehicleNotification(VEHICLEID VehicleID)
 {
+	spdlog::info("SendExitVehicleNotification: vehicle {}", VehicleID);
+
 	RakNet::BitStream bsSend;
 
 	CVehiclePool* pVehiclePool = pNetGame->GetVehiclePool();
-	CVehicle* pVehicle = pVehiclePool->GetAt(VehicleID);
+	CVehicle* pVehicle = pVehiclePool ? pVehiclePool->GetAt(VehicleID) : nullptr;
 	if (pVehicle) {
-		if (!m_pPlayerPed->IsAPassenger()) {
+		if (m_pPlayerPed && !m_pPlayerPed->IsAPassenger()) {
 			m_LastVehicle = VehicleID;
 		}
 

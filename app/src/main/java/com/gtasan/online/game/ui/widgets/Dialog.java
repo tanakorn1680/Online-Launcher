@@ -2,6 +2,7 @@ package com.gtasan.online.game.ui.widgets;
 
 import android.app.Activity;
 import android.content.Context;
+import com.gtasan.online.utils.TextEncoding;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -202,12 +203,8 @@ public class Dialog {
             }
         }
 
-        try {
-            byte[] Str2 = str.getBytes("windows-1251");
-            listener._sendDialogResponse(mCurrentDialogId, i, i2, Str2);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        byte[] Str2 = TextEncoding.encode(activity, str);
+        listener._sendDialogResponse(mCurrentDialogId, i, i2, Str2);
 
         Hide();
     }

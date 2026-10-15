@@ -15,6 +15,7 @@ char Settings::m_pass[64] = "";
 // settings
 char Settings::m_nick[30] = "samp_player";
 int Settings::m_sampversion = 0;
+char Settings::m_encoding[16] = "CP1251";
 bool Settings::m_newinterface = false;
 bool Settings::m_systemkeyboard = false;
 bool Settings::m_timestamp = false;
@@ -90,6 +91,10 @@ void Settings::initialize()
 	// settings
 	snprintf(m_nick, sizeof(m_nick), "%s", settings["nick_name"].GetString());
 	m_sampversion = settings.HasMember("samp_version") && settings["samp_version"].IsInt() ? settings["samp_version"].GetInt() : 0;
+	if (settings.HasMember("text_encoding") && settings["text_encoding"].IsString()) {
+		snprintf(m_encoding, sizeof(m_encoding), "%s", settings["text_encoding"].GetString());
+	}
+	Encoding::setCharset(m_encoding);
 	// m_newinterface = settings_json["client"]["settings"]["new_interface"].GetBool();
 	m_systemkeyboard = settings_json["client"]["settings"]["system_keyboard"].GetBool();
 	m_timestamp = settings_json["client"]["settings"]["timestamp"].GetBool();

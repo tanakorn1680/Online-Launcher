@@ -33,4 +33,14 @@ public:
 		void draw(ImGuiRenderer* renderer) override;
 		void touchPopEvent() override;
 	};
+
+	// Hold-to-guard button: while the finger is down the local ped keeps the
+	// fight/guard (targeting) stance. Shown only on foot and alive.
+	class GuardButton : public Widget {
+	public:
+		GuardButton();
+
+		void draw(ImGuiRenderer* renderer) override;
+		void focuseEvent(bool focus) override;
+	};
 };

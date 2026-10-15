@@ -4,8 +4,8 @@
     <font
         android:fontStyle="normal"
         android:fontWeight="400"
-        android:font="@font/montserrat"
+        android:font="@font/chakra_petch_medium"
         app:fontStyle="normal"
         app:fontWeight="400"
-        app:font="@font/montserrat" />
+        app:font="@font/chakra_petch_medium" />
 </font-family>

@@ -1,6 +1,7 @@
 package com.gtasan.online.game.ui;
 
 import android.content.Context;
+import com.gtasan.online.utils.TextEncoding;
 import android.graphics.Color;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -203,13 +204,7 @@ public class UI implements ButtonPanel.Listener, Voice.Listener, Dialog.Listener
     public void _keyboardSend(String str) {
         // Log.i(TAG, "**** keyboardSend " + str);
 
-        byte[] ret = new byte[0];
-
-        try {
-            ret = str.getBytes("windows-1251");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        byte[] ret = TextEncoding.encode(samp, str);
 
         try {
             keyboardSend(ret);

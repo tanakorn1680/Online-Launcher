@@ -381,6 +381,7 @@ public class Utils {
             jSONObject.getJSONObject("client").put("settings", new JSONObject());
             jSONObject.getJSONObject("client").getJSONObject("settings").put("nick_name", settings_prefs.getString("nick_name", "samp_player"));
             jSONObject.getJSONObject("client").getJSONObject("settings").put("samp_version", settings_prefs.getInt("samp_version", 0));
+            jSONObject.getJSONObject("client").getJSONObject("settings").put("text_encoding", TextEncoding.code(settings_prefs.getInt(TextEncoding.PREF_KEY, 0)));
             jSONObject.getJSONObject("client").getJSONObject("settings").put("game_version", settings_prefs.getInt("game_version", 0));
             jSONObject.getJSONObject("client").getJSONObject("settings").put("new_interface", settings_prefs.getBoolean("new_interface", false));
             jSONObject.getJSONObject("client").getJSONObject("settings").put("system_keyboard", settings_prefs.getBoolean("system_keyboard", false));
@@ -417,6 +418,7 @@ public class Utils {
         SharedPreferences.Editor edit = ctx.getSharedPreferences("samp_settings", Context.MODE_PRIVATE).edit();
         edit.putString("nick_name", "samp_player");
         edit.putInt("samp_version", 0);
+        edit.putInt(TextEncoding.PREF_KEY, 0);
         edit.putInt("game_version", 0);
         edit.putBoolean("new_interface", false);
         edit.putBoolean("system_keyboard", false);

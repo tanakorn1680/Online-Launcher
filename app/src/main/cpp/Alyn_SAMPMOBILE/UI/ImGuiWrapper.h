@@ -27,6 +27,7 @@ protected:
 
 private:
 	ImFont* loadFont(const std::string& font_name, float font_size);
+	void mergeThaiFont(float font_size, float extra_spacing);
 
 	void setupRenderState(ImDrawData* draw_data);
 	void checkVertexBuffer(ImDrawData* draw_data);

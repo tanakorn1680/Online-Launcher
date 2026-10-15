@@ -2,6 +2,7 @@
 #include "../Game/Game.h"
 #include "../Net/NetGame.h"
 #include "UI.h"
+#include "../Features.h"
 #include "../Net/PlayerBubblePool.h"
 #include "../UI/SAMPWidgets/VoiceButton.h"
 #include "../Voice/SpeakerList.h"
@@ -53,11 +54,26 @@ bool UI::initialize()
 	m_buttonPanel->setPosition(UISettings::buttonPanelPos());
 	m_buttonPanel->setVisible(false);
 
+	// Round action buttons (guard stance / ride as passenger). Laid out as
+	// fractions of the screen so they sit left and right of the voice button.
+	const float actionBtn = displaySize().y * 0.14f;
+	const float actionY = displaySize().y * 0.625f - actionBtn / 2.0f;
+
+#if FEATURE_GUARD_BUTTON
+	auto guardButton = new ButtonPanel::GuardButton();
+	this->addChild(guardButton);
+	guardButton->setFixedSize(ImVec2(actionBtn, actionBtn));
+	guardButton->setPosition(ImVec2(displaySize().x * 0.70f - actionBtn / 2.0f, actionY));
+	guardButton->setVisible(true);
+#endif
+
+#if FEATURE_RIDE_BUTTON
 	auto passengerButton = new ButtonPanel::PassengerButton();
 	this->addChild(passengerButton);
-	passengerButton->setFixedSize(UISettings::buttonVoiceSize());
-	passengerButton->setPosition(UISettings::buttonVoicePos() + ImVec2(ScaleX(150.0f), 0.0f));
+	passengerButton->setFixedSize(ImVec2(actionBtn, actionBtn));
+	passengerButton->setPosition(ImVec2(displaySize().x * 0.87f - actionBtn / 2.0f, actionY));
 	passengerButton->setVisible(true);
+#endif
 
 	m_voiceButton = new VoiceButton();
 	this->addChild(m_voiceButton);

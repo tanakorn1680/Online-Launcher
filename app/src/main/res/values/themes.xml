@@ -2,6 +2,7 @@
 
     <!-- Base theme used by most activities -->
     <style name="Theme.NativoRPG" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="fontFamily">@font/montserrat</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -17,6 +18,7 @@
 
     <!-- Launcher / Splash screen theme -->
     <style name="Theme.Launcher" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="fontFamily">@font/montserrat</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
         <item name="colorOnPrimary">@color/white</item>

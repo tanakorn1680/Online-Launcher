@@ -1,4 +1,5 @@
 #include "Client.h"
+#include "Features.h"
 #include "BackTrace.h"
 #include "Settings.h"
 #include "ClientCmds.h"
@@ -56,10 +57,18 @@ void init_logger(const std::string& gameDir)
 
 		// Set log level and pattern
 		logger->set_level(spdlog::level::info);
+#if FEATURE_CRASH_DIAGNOSTICS
+		// Warnings/errors hit the disk immediately, everything else at least once a second,
+		// so the log still shows what happened right before a crash.
+		logger->flush_on(spdlog::level::warn);
+#endif
 		logger->set_pattern("[%d-%m-%Y %H:%M:%S] [%^%l%$] %v");
 
 		// Set as default logger
 		spdlog::set_default_logger(logger);
+#if FEATURE_CRASH_DIAGNOSTICS
+		spdlog::flush_every(std::chrono::seconds(1));
+#endif
 	}
 	catch (const spdlog::spdlog_ex& ex) {
 		__android_log_print(ANDROID_LOG_ERROR, "Alyn_SAMPMOBILE", "Log initialization failed: %s", ex.what());
@@ -77,6 +86,10 @@ void* startGame(void*)
 	pthread_exit(nullptr);
 }
 
+#if FEATURE_CRASH_DIAGNOSTICS
+static struct sigaction g_oldAbortAction{};
+#endif
+
 void Client::initialize(const std::string& gameDir, bool offlineMode)
 {
 	// signal handler
@@ -84,13 +97,66 @@ void Client::initialize(const std::string& gameDir, bool offlineMode)
 	sig_action.sa_sigaction = [](int signal, siginfo_t* info, void* ctx) {
 		dump_register(signal, info, ctx);
 		dump_stack(2);
+#if FEATURE_CRASH_DIAGNOSTICS
+		spdlog::default_logger()->flush();
+#endif
 		exit(signal);
 	};
 	sigemptyset(&sig_action.sa_mask);
 	sig_action.sa_flags = SA_SIGINFO;
 	sigaction(SIGSEGV, &sig_action, nullptr);
 
+#if FEATURE_CRASH_DIAGNOSTICS
+	// abort() (e.g. "Pure virtual function called") used to leave nothing in our log.
+	// Log it, then hand over to the handler that was installed before ours (Android's
+	// debuggerd), so the system tombstone is still written.
+	struct sigaction abort_action{};
+	abort_action.sa_sigaction = [](int signal, siginfo_t* info, void* ctx) {
+		spdlog::error("Fatal signal {} (abort)", signal);
+		dump_stack(2);
+		spdlog::default_logger()->flush();
+
+		if (g_oldAbortAction.sa_flags & SA_SIGINFO) {
+			if (g_oldAbortAction.sa_sigaction) {
+				g_oldAbortAction.sa_sigaction(signal, info, ctx);
+			}
+		}
+		else if (g_oldAbortAction.sa_handler != SIG_DFL && g_oldAbortAction.sa_handler != SIG_IGN) {
+			g_oldAbortAction.sa_handler(signal);
+		}
+
+		struct sigaction dfl{};
+		dfl.sa_handler = SIG_DFL;
+		sigemptyset(&dfl.sa_mask);
+		sigaction(SIGABRT, &dfl, nullptr);
+		raise(SIGABRT);
+	};
+	sigemptyset(&abort_action.sa_mask);
+	abort_action.sa_flags = SA_SIGINFO;
+	sigaction(SIGABRT, &abort_action, &g_oldAbortAction);
+#endif
+
 	init_logger(gameDir);
+
+#if FEATURE_CRASH_DIAGNOSTICS
+	// An uncaught C++ exception ends in abort(); log what it was before dying.
+	std::set_terminate([]() {
+		spdlog::error("std::terminate called");
+		try {
+			if (auto ex = std::current_exception()) {
+				std::rethrow_exception(ex);
+			}
+		}
+		catch (const std::exception& e) {
+			spdlog::error("Uncaught exception: {}", e.what());
+		}
+		catch (...) {
+			spdlog::error("Uncaught exception: unknown type");
+		}
+		spdlog::default_logger()->flush();
+		abort();
+	});
+#endif
 
 	spdlog::info("Initializing Alyn_SAMPMOBILE client...");
 

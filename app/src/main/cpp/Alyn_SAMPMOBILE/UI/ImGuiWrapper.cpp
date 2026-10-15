@@ -3,6 +3,10 @@
 #include "../Game/Game.h"
 #include "../Net/NetGame.h"
 
+#include <dirent.h>
+#include <unistd.h>
+#include <cstring>
+
 extern NetGame* pNetGame;
 
 ImGuiWrapper::ImGuiWrapper(const ImVec2& display_size, const std::string& fonts_path)
@@ -94,7 +98,63 @@ ImFont* ImGuiWrapper::loadFont(const std::string& font_name, float font_size)
 		return nullptr;
 	}
 
+	// The game's text font has no Thai glyphs: merge the system Thai font into it.
+	if (font_name == "arial_bold.ttf") {
+		mergeThaiFont(font_size, fontCfg.GlyphExtraSpacing.x);
+	}
+
 	return font;
+}
+
+void ImGuiWrapper::mergeThaiFont(float font_size, float extra_spacing)
+{
+	static const ImWchar thaiRanges[] = { 0x0E00, 0x0E7F, 0 };
+
+	std::string thaiPath;
+	static const char* candidates[] = {
+		"/system/fonts/NotoSansThai-Regular.ttf",
+		"/system/fonts/NotoSansThaiUI-Regular.ttf",
+		"/system/fonts/NotoSansThai-VF.ttf",
+		"/system/fonts/DroidSansThai.ttf",
+		nullptr
+	};
+	for (int i = 0; candidates[i] != nullptr; i++) {
+		if (access(candidates[i], R_OK) == 0) {
+			thaiPath = candidates[i];
+			break;
+		}
+	}
+
+	// Fall back to any "*Thai*" sans font in /system/fonts.
+	if (thaiPath.empty()) {
+		DIR* dir = opendir("/system/fonts");
+		if (dir != nullptr) {
+			while (dirent* entry = readdir(dir)) {
+				const char* name = entry->d_name;
+				if (strstr(name, "Thai") != nullptr && strstr(name, "Serif") == nullptr &&
+					strstr(name, "Bold") == nullptr && strstr(name, ".ttf") != nullptr) {
+					thaiPath = std::string("/system/fonts/") + name;
+					break;
+				}
+			}
+			closedir(dir);
+		}
+	}
+
+	if (thaiPath.empty()) {
+		spdlog::warn("No system Thai font found, Thai text will not be drawn by the client UI");
+		return;
+	}
+
+	ImFontConfig mergeCfg;
+	mergeCfg.MergeMode = true;
+	mergeCfg.GlyphExtraSpacing.x = extra_spacing;
+	if (ImGui::GetIO().Fonts->AddFontFromFileTTF(thaiPath.c_str(), font_size, &mergeCfg, thaiRanges) != nullptr) {
+		spdlog::info("Thai fallback font merged: {}", thaiPath);
+	}
+	else {
+		spdlog::warn("Failed to merge Thai font: {}", thaiPath);
+	}
 }
 
 void ImGuiWrapper::setupRenderState(ImDrawData* draw_data)

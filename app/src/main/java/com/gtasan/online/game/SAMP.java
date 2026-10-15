@@ -102,6 +102,12 @@ public class SAMP extends GTASA {
         // delete MINFO.BIN and CINFO.BIN if they exist
         File minfo = new File(getExternalFilesDir(null), "MINFO.BIN");
         File cinfo = new File(getExternalFilesDir(null), "CINFO.BIN");
+        File modelsMinfo = new File(getExternalFilesDir(null), "models/MINFO.BIN");
+
+        if (modelsMinfo.exists()) {
+            Log.i(TAG, "Deleting models/MINFO.BIN");
+            modelsMinfo.delete();
+        }
 
         if (minfo.exists()) {
             Log.i(TAG, "Deleting MINFO.BIN");
@@ -304,5 +310,12 @@ public class SAMP extends GTASA {
     public void onDestroy() {
         Log.i(TAG, "**** onDestroy");
         super.onDestroy();
+
+        // The game lives in its own process (":game"). Native libraries keep static state,
+        // so end the process when leaving the game; the next launch then starts clean.
+        if (isFinishing()) {
+            Log.i(TAG, "**** leaving the game; ending the :game process");
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
     }
 }

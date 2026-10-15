@@ -32,11 +32,12 @@ import java.util.function.Function;
 
 import com.gtasan.online.R;
 import com.gtasan.online.SplashActivity;
+import com.gtasan.online.utils.TextEncoding;
 import com.gtasan.online.utils.Utils;
 
 @Obfuscate
 public class SettingsPageFragment extends Fragment {
-    private MaterialAutoCompleteTextView samp_version, game_version;
+    private MaterialAutoCompleteTextView samp_version, game_version, text_encoding;
     private Switch voice, timestamp, fullscreen, displayfps, newhud, systemkeyboard, cleo, aml, monet, modloader;
     private MaterialButton restore_button;
     private MaterialButton chat_minus, chat_strings, chat_plus;
@@ -68,6 +69,9 @@ public class SettingsPageFragment extends Fragment {
 
         view.findViewById(R.id.sampIcon).setOnClickListener(v ->
                 showOptionInfo("SA-MP Version", "Select whichever SA-MP version you prefer from the dropdown."));
+
+        view.findViewById(R.id.encodingIcon).setOnClickListener(v ->
+                showOptionInfo("Text encoding", "Character set used for chat and dialog text. Choose Thai (CP874) or UTF-8 for Thai servers. Cyrillic (CP1251) is the default."));
 
         view.findViewById(R.id.gameIcon).setOnClickListener(v ->
                 showOptionInfo("Game Version", "Choose whether to use the old version of the Game or thew Newest, old version supports x32 bit devices Only, and the newest supports x32 and x64 bit devices."));
@@ -118,6 +122,7 @@ public class SettingsPageFragment extends Fragment {
 
     private void initViews(View view) {
         samp_version = view.findViewById(R.id.samp_version);
+        text_encoding = view.findViewById(R.id.text_encoding);
         game_version = view.findViewById(R.id.game_version);
         game_version_layout = view.findViewById(R.id.game_version_layout);
         voice = view.findViewById(R.id.voice_switch);
@@ -149,6 +154,11 @@ public class SettingsPageFragment extends Fragment {
         samp_version.setAdapter(selectCoreAdapter);
         samp_version.setText(items[settings_prefs.getInt("samp_version", 0)], false);
         samp_version.setOnItemClickListener((adapterView, v, i, l) -> savePreference("samp_version", i));
+
+        ArrayAdapter<String> encodingAdapter = new ArrayAdapter<>(requireContext(), R.layout.layout_setting_version, TextEncoding.LABELS);
+        text_encoding.setAdapter(encodingAdapter);
+        text_encoding.setText(TextEncoding.LABELS[TextEncoding.index(requireContext())], false);
+        text_encoding.setOnItemClickListener((adapterView, v, i, l) -> savePreference(TextEncoding.PREF_KEY, i));
 
         /*String[] gameItems = {"New", "Old"};
         ArrayAdapter<String> selectGameAdapter = new ArrayAdapter<>(requireContext(), R.layout.layout_setting_version, gameItems);
@@ -195,6 +205,7 @@ public class SettingsPageFragment extends Fragment {
         restore_button.setOnClickListener(v -> showAlertDialog("Are you sure you want to restore default settings?", (dialog, which) -> {
             Utils.restoreSettings(requireContext());
             setWidgetsForSettings();
+            text_encoding.setText(TextEncoding.LABELS[0], false);
             dialog.dismiss();
         }, (dialog, which) -> dialog.dismiss()));
     }

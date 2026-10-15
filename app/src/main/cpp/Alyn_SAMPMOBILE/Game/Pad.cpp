@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "../Features.h"
 #include "../UI/UI.h"
 #include "../Net/NetGame.h"
 #include "../Client.h"
@@ -13,6 +14,7 @@ extern int g_iLagCompensationMode;
 
 PAD_KEYS LocalPlayerKeys;
 PAD_KEYS RemotePlayerKeys[PLAYER_PED_SLOTS];
+bool g_bGuardButtonHeld = false; // on-screen GUARD button (UI/SAMPWidgets/ButtonPanel.cpp)
 
 sa::CPed* dwCurPlayerActor = nullptr;
 uint8_t byteInternalPlayer = 0;
@@ -254,7 +256,8 @@ DECL_HOOK(uint32_t, CPad_GetBlock, uintptr_t _this)
 		return (RemotePlayerKeys[byteCurPlayer].bKeys[ePadKeys::KEY_JUMP] && RemotePlayerKeys[byteCurPlayer].bKeys[ePadKeys::KEY_HANDBRAKE]);
 	}
 	else {
-		return CPad_GetBlock(_this);
+		uint32_t dwResult = CPad_GetBlock(_this);
+		return g_bGuardButtonHeld ? 1 : dwResult;
 	}
 }
 
@@ -368,7 +371,15 @@ DECL_HOOK(uint32_t, CPad_ExitVehicleJustDown, uintptr_t _this, int a2, uintptr_t
 		}
 	}
 
-	return CPad_ExitVehicleJustDown(_this, a2, vehicle, a4, vec);
+	uint32_t dwResult = CPad_ExitVehicleJustDown(_this, a2, vehicle, a4, vec);
+#if FEATURE_VEHICLE_COOLDOWN
+	if (dwResult) {
+		// Real exit started: block another one for 1s (spamming enter/exit crashes the game).
+		dwPassengerEnterExit = GetTickCount();
+		spdlog::info("ExitVehicleJustDown accepted");
+	}
+#endif
+	return dwResult;
 }
 
 DECL_HOOK(int, CPad_GetTurretLeft, uintptr_t _this)
@@ -1335,7 +1346,7 @@ DECL_HOOK(void, CTaskComplexEnterCarAsDriver, uintptr_t** _this, sa::CVehicle* p
 
 DECL_HOOK(void, CTaskComplexLeaveCar, uintptr_t** _this, sa::CVehicle* pVehicle, int iTargetDoor, int iDelayTime, bool bSensibleLeaveCar, bool bForceGetOut)
 {
-	if (pNetGame) {
+	if (pNetGame && GamePool_FindPlayerPed() && pNetGame->GetVehiclePool() && pNetGame->GetPlayerPool()) {
 		if (GamePool_FindPlayerPed()->pVehicle == pVehicle) {
 			CVehiclePool* pVehiclePool = pNetGame->GetVehiclePool();
 			VEHICLEID VehicleID = pVehiclePool->FindIDFromGtaPtr(GamePool_FindPlayerPed()->pVehicle);
@@ -1458,8 +1469,23 @@ DECL_HOOK(uint32_t, CPad_GetEnterTargeting, uintptr_t _this)
 		return 0;
 	}
 	else {
-		return CPad_GetEnterTargeting(_this);
+		// GetEnterTargeting is a "just pressed" edge: pulse it once per GUARD press.
+		static bool s_prevHeld = false;
+		uint32_t dwResult = CPad_GetEnterTargeting(_this);
+		bool edge = g_bGuardButtonHeld && !s_prevHeld;
+		s_prevHeld = g_bGuardButtonHeld;
+		return edge ? 1 : dwResult;
 	}
+}
+
+// GetTarget is the "target/aim button held" state: keep it true while GUARD is held.
+DECL_HOOK(uint32_t, CPad_GetTarget, uintptr_t _this, bool bUnk)
+{
+	uint32_t dwResult = CPad_GetTarget(_this, bUnk);
+	if (!*pbyteCurrentPlayer && g_bGuardButtonHeld) {
+		return 1;
+	}
+	return dwResult;
 }
 
 DECL_HOOK(uint32_t, CCamera_IsTargetingActive, uintptr_t _this, sa::CPed* pPed)
@@ -1860,6 +1886,11 @@ void Hooks::installPadHooks()
 	HOOK("_ZN4CPad9GetWeaponEP4CPedb", CPad_GetWeapon);
 	HOOK("_ZN7CCamera17IsTargetingActiveEP10CPlayerPed", CCamera_IsTargetingActive);
 	HOOK("_ZN4CPad17GetEnterTargetingEv", CPad_GetEnterTargeting);
+#if FEATURE_GUARD_BUTTON
+	if (g_saSym->GetSymbol<uintptr_t>("_ZN4CPad9GetTargetEb")) {
+		HOOK("_ZN4CPad9GetTargetEb", CPad_GetTarget);
+	}
+#endif
 
 	Memory::hookBL(g_saSym->Abs(addr::CWeapon_FireInstantHit_branch1), (void*) &CWeapon_FireInstantHit_hook, (void**) &CWeapon_FireInstantHit);
 	Memory::hookBL(g_saSym->Abs(addr::CWeapon_FireInstantHit_branch2), (void*) &CWeapon_FireInstantHit_hook, (void**) &CWeapon_FireInstantHit);

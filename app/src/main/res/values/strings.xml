@@ -94,4 +94,5 @@
     <string name="players_count_unknown">--/--</string>
     <string name="back">BACK</string>
     <string name="tap_to_choose_server">Tap to change server</string>
+    <string name="text_encoding">Text encoding</string>
 </resources>
