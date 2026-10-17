@@ -372,13 +372,9 @@ DECL_HOOK(uint32_t, CPad_ExitVehicleJustDown, uintptr_t _this, int a2, uintptr_t
 	}
 
 	uint32_t dwResult = CPad_ExitVehicleJustDown(_this, a2, vehicle, a4, vec);
-#if FEATURE_VEHICLE_COOLDOWN
 	if (dwResult) {
-		// Real exit started: block another one for 1s (spamming enter/exit crashes the game).
-		dwPassengerEnterExit = GetTickCount();
 		spdlog::info("ExitVehicleJustDown accepted");
 	}
-#endif
 	return dwResult;
 }
 

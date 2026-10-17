@@ -5,5 +5,5 @@
 
 #define FEATURE_GUARD_BUTTON      1  // on-screen GUARD button (hold = guard/fight stance)
 #define FEATURE_RIDE_BUTTON       1  // on-screen RIDE button (enter nearby vehicle as passenger)
-#define FEATURE_VEHICLE_COOLDOWN  1  // 1 s cooldown between vehicle exits / RIDE presses
+#define FEATURE_VEHICLE_COOLDOWN  1  // 1 s cooldown between RIDE button presses
 #define FEATURE_CRASH_DIAGNOSTICS 1  // log SIGABRT + uncaught exceptions, flush the log every second
