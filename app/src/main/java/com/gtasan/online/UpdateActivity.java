@@ -100,7 +100,7 @@ public class UpdateActivity extends AppCompatActivity {
                 case 2:
                     Log.i("UpdateActivity", "UpdateService.FINISH_UPDATE_GAME");
                     resetProgress(true, 100, 100);
-                    ((MaterialTextView) findViewById(R.id.update_state)).setText("Atualizando...");
+                    ((MaterialTextView) findViewById(R.id.update_state)).setText("Updating...");
                     if (msg.getData().getBoolean(NotificationCompat.CATEGORY_STATUS, false)) {
                         startActivity(new Intent(UpdateActivity.this, SplashActivity.class));
                         finish();
@@ -129,7 +129,7 @@ public class UpdateActivity extends AppCompatActivity {
                                 break;
                             case CheckUpdate:
                             case DownloadGame:
-                                ((MaterialTextView) findViewById(R.id.update_state)).setText("Atualizando o jogo...");
+                                ((MaterialTextView) findViewById(R.id.update_state)).setText("Updating the game...");
                                 if (msg.getData().getBoolean("withProgress", false)) {
                                     long total = msg.getData().getLong("total", 0);
                                     long current = msg.getData().getLong("current", 0);
@@ -138,12 +138,12 @@ public class UpdateActivity extends AppCompatActivity {
                                     progressBar.setMax((int) (total / 1000));
                                     progressBar.setProgress((int) (current / 1000));
                                     ((MaterialTextView) findViewById(R.id.progress)).setText((((long) 100) * current) / (total + 1) + "%");
-                                    ((MaterialTextView) findViewById(R.id.filename)).setText("");
-                                    ((MaterialTextView) findViewById(R.id.size)).setText("");
+                                    ((MaterialTextView) findViewById(R.id.filename)).setText("Application package");
+                                    ((MaterialTextView) findViewById(R.id.size)).setText(Utils.convertBytesToString(current) + " / " + Utils.convertBytesToString(total));
                                 }
                                 break;
                             case DownloadGameFiles:
-                                ((MaterialTextView) findViewById(R.id.update_state)).setText("Atualizando arquivos do jogo...");
+                                ((MaterialTextView) findViewById(R.id.update_state)).setText("Updating game files...");
                                 if (msg.getData().getBoolean("withProgress", false)) {
                                     long total = msg.getData().getLong("total", 0);
                                     long current = msg.getData().getLong("current", 0);
@@ -169,8 +169,8 @@ public class UpdateActivity extends AppCompatActivity {
                     Log.e("UpdateActivity", "UpdateActivity -> UpdateService.UPDATE_STATUS_ERROR");
                     try {
                         new AlertDialog.Builder(UpdateActivity.this)
-                                .setTitle("Atualização:")
-                                .setMessage("Falha ao baixar a atualização!")
+                                .setTitle("Update:")
+                                .setMessage("Failed to download the update!")
                                 .setPositiveButton("Ok", (dialog, which) -> {
                                     startActivity(new Intent(UpdateActivity.this, SplashActivity.class));
                                     finish();
@@ -197,7 +197,7 @@ public class UpdateActivity extends AppCompatActivity {
         hideSystemUI();
 
         resetProgress(false, 0, 0);
-        ((MaterialTextView) findViewById(R.id.update_state)).setText("Preparando...");
+        ((MaterialTextView) findViewById(R.id.update_state)).setText("Preparing...");
 
         ((MaterialTextView) findViewById(R.id.ahahaha)).setText(Utils.copyright);
 
